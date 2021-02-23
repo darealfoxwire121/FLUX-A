@@ -1,37 +1,60 @@
 import cv2
-import numpy as np
-import keyboard
+import keyboard as key
 import pyautogui
-import os
-import subprocess
 import time
-
 import win32api
-import math
 
-realimg = None
-x = 0
 
-temp_file_loc = ""
+#Move mouse to x and y coordinates
+def mouse_move(x , y):
 
-win32api.MessageBox(None,"Open roblox then press ok", "notice", 0)
-temp_img = cv2.cvtColor(temp_file_loc,cv2.COLOR_RGB2GRAY)
-pyautogui.screenshot('Newimage.png')
+    #windows api's movement is faster than other modules
+    win32api.mouse_event( "MOUSEEVENTF_ABSOLUTE" , x , y , 0 , None )
 
-for pnts in pyautogui.locateAllOnScreen(temp_img, confidence=0.4):
-    realimg = cv2.imread('Newimage.png', cv2.TM_CCOEFF)
-    realimg = cv2.cvtColor(realimg, cv2.COLOR_RGB2GRAY)
-    pnts_left = pnts[0]
-    pnts_top = pnts[1]
-    pnts_width = pnts[2]
-    pnts_height = pnts[3]
-    x += 1
-    print("Found "+str(x))
-    cv2.rectangle(realimg, ((pnts_left),(pnts_top - pnts_height + (pnts_height//2))), ((pnts_left + pnts_width),(pnts_top + pnts_height)), (0,255,255), 2)
-    if x > 100:
-        break
 
-cv2.imshow('Detected',realimg)
-cv2.waitKey()
-cv2.destroyAllWindows()
+#Get the center coordinates of the image
+def center_img(image_parts):
+
+    #Top + Height //2 ; Left + Width//2
+    return ( ( image_parts.Image_Top + image_parts.Image_Height//2 ) , ( image_parts.Image_left + Image_width//2 ) )
+
+
+#locate image on screen
+def locate_img(image_file):
+
+    #Use OpenCV to locate the template image on screen using confidence, the higher, the more strict
+    img_loc = pyautogui.locateOnScreen( image_file , confidence=0.5 )
+
+    #if location exists
+    if img_loc != None:
+
+        #all the parts of the image needed
+        Image_Parts = {
+            "Image_Top": img_loc[0],
+            "Image_left": img_loc[1],
+            "Image_width": img_loc[2],
+            "Image_Height": img_loc[3],
+        }
+
+        return Image_Parts
+
+
+#Make sure roblox is in view
+win32api.MessageBox(None,"Make sure roblox is visible on screen, then press Ok", "Please note", 0)
+
+
+#Grab the temp_img file to be used for searching
+temp_img = 'C:/Users/foxwi/Documents/Lightshot/Screenshot_12.png'
+
+
+#Looks for objects every time the loop runs, stops when ctrl+c
+while True:
     
+    #delay
+    time.sleep(.5)
+
+    #Grab the center to the found image
+    Real_img = center_img(locate_img(temp_img))
+
+    #Move mouse to the Real_img's center ( In this case, should be the enemy's head )
+    mouse_move( Real_img[0] , Real_img[1] )
