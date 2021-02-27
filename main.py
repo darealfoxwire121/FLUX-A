@@ -1,2 +1,1 @@
-setuptools
-scipy
+import cv2
