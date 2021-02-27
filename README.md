@@ -9,9 +9,3 @@ It (will) consist of of multiple utilities to provide the roblox needs, includin
 
 - [ ] Roblox Auto-Aim  
 - [ ] Roblox Auto-Drive
-
-## **When will it be finished?**
-
-Whenever I have completed stages to this project I will change this part of the ReadMe, so just wait and look for changes *here*.
-
-`Status: None of the stages completed so far`
