@@ -6,7 +6,7 @@ import win32api
 
 def mouse_move(table):
     pyautogui.moveTo(table[0],table[1])
-    #pyautogui.click(table[0],table[1])
+    pyautogui.click(table[0],table[1])
 
 def locate_img(image_files):
     count = 0
