@@ -2,15 +2,34 @@ import cv2
 from PIL import ImageGrab
 import numpy as np
 
-while True:
-    img = np.array(ImageGrab.grab(bbox=(0,0,800,600)))
-    gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
-    ret, newimg = cv2.threshold(img, 0, 255, cv2.CHAIN_APPROX_NONE)
+def FindTemplates(template_img, threshold):
 
-    cv2.imshow("Tracking",newimg)
+    temp = cv2.imread(template_img)
+    img = np.array(ImageGrab.grab())
+    result = cv2.matchTemplate(img, temp, cv2.TM_CCOEFF_NORMED)
 
-    if cv2.waitKey(1) & 0xff ==ord('q'):
-        break
+    locations = np.where(result >= threshold)
+    locations = list(zip(*locations[::-1]))
 
-cv2.destroyAllWindows()
+    if locations:
+        print('Found template')
+        for loc in locations:
+
+            width = temp.shape[1]
+            height = temp.shape[0]
+
+            if loc[0] and loc[1]:
+                top_left = loc
+                bottom_right = (top_left[0] + width, top_left[1] + height)
+
+                cv2.rectangle(img, top_left, bottom_right, (0,255,0), 1, 4)
+
+        cv2.imshow('Tacking',img)
+        cv2.waitKey()
+
+    else:
+        print("Could not find template")
+
+
+FindTemplates("TEMPLATE MATCH IMAGE DIRECTORY HERE", 0.4)
