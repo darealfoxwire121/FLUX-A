@@ -1,74 +1,52 @@
-import cv2
-from PIL import ImageGrab
-import win32, win32api, win32gui, win32con, win32ui
+#To do:
+# add roblox height and width as bbox
+# make it loop, and take screenshots
+# give keyboard output depending on location of lines
+
+import cv2 as cv
+import matplotlib.pylab as plt
 import numpy as np
 
-class CapWindow:
-    def _init_(Name_Of_Window):
-        w, h = 1920, 1080
+img = cv.imread(r"C:\Users\foxwi\Documents\Lightshot\Screenshot_19.png")
+ret, newImg = cv.threshold(img, 230, 255, cv.THRESH_BINARY, None)
 
-        Window_Name = Name_Of_Window or "Roblox"
-        hwnd = win32gui.FindWindow(None, Window_Name)
+#dark image with nothing
+darkImg = np.zeros(img.shape[:2], dtype='uint8')
 
-        wDC = win32gui.GetWindowDC(hwnd)
-        dcObj = win32ui.CreateDCFromHandle(wDC)
-        cDC = dcObj.CreateCompatibleDC()
-        dataBitMap = win32ui.CreateBitmap()
-        dataBitMap.CreateCompatibleBitmap(dcObj, w, h)
-        cDC.SelectObject(dataBitMap)
-        cDC.BitBlt((0, 0), (w, h), dcObj, (0, 0), win32con.SRCCOPY)
+#draw ROI on dark image
+pts = np.array([[51,299], [243,192], [329,192], [513,299]], np.int32)
+pts = pts.reshape((-1,1,2))
 
-        signedIntsArray = dataBitMap.GetBitmapBits(True)
-        img = np.fromstring(signedIntsArray, dtype='uint8')
-        img.shape = (h, w, 4)
+#poly shaped image
+poly = cv.fillPoly(darkImg.copy(), [pts], (255,0,0), None, None)
 
-        dcObj.DeleteDC()
-        cDC.DeleteDC()
-        win32gui.ReleaseDC(hwnd, wDC)
-        win32gui.DeleteObject(dataBitMap.GetHandle())
+#real img with poly shape overlay
+polyimg = cv.fillPoly(img.copy(), [pts], (255,0,0), None, None)
 
-        img = img[...,:3]
+#create masked image with ROI
+new_shape = cv.bitwise_and(img,img, mask=poly)
 
-        img = np.ascontiguousarray(img)
+#create ROI threshold
+ret, threshmask = cv.threshold(new_shape, 120, 255, cv.THRESH_BINARY, None)
 
-        return img
+#grab egdes and lines
+egdes = cv.Canny(threshmask, 50, 100, None, None, None)
+lines = cv.HoughLinesP(egdes, 1, np.pi/180, 30, None, None, 200)
 
+#draw actual lines on all lines
+newNum = 0
+while newNum < len(lines):
+    for x1,y1,x2,y2 in lines[newNum]:
+        cv.line(img,(x1,y1), (x2,y2), (0,255,0), 3, None, None)
+    newNum += 1
 
-
-def FindTemplates(img, template_img, threshold):
-
-    temp = cv2.imread(template_img)
-    img = img
-    result = cv2.matchTemplate(img, temp, cv2.TM_CCOEFF_NORMED)
-
-    locations = np.where(result >= threshold)
-    locations = list(zip(*locations[::-1]))
-
-    if locations:
-        print('Found template')
-        for loc in locations:
-
-            width = temp.shape[1]
-            height = temp.shape[0]
-
-            if loc[0] and loc[1]:
-                top_left = loc
-                bottom_right = (top_left[0] + width, top_left[1] + height)
-
-                cv2.rectangle(img, top_left, bottom_right, (0,255,0), 1, 4)
-
-        cv2.imshow('Tacking',img)
-        cv2.waitKey()
-
-    else:
-        print("Could not find template")
-
-
-while True:
-    frame = CapWindow("Roblox")
-    temp_img = ""
-    FindTemplates(frame,temp_img, 0.4)
-
-    if cv2.waitKey() & 0xff ==ord('q'):
-        cv2.destroyAllWindows()
-        break
+plt.imshow(img)
+#plt.show()
+cv.imshow("Poly Shape",poly)
+cv.imshow("Image with lines", img)
+cv.imshow("Threshold Image", newImg)
+cv.imshow("Modified Image", new_shape)
+cv.imshow("Real image + Poly overlay",polyimg)
+cv.imshow("Threshold for masked image", threshmask)
+cv.waitKey(0)
+cv.destroyAllWindows()
